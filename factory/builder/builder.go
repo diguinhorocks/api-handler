@@ -21,130 +21,162 @@ type RequestContainer struct {
 	Map 	map[string]string
 }
 
+type M map[string]interface{}
+
 func SetMap (t string, m map[string]string, context map[string]interface{}) {
 	fmt.Println("configuring map " + t)
+
+	mp := make(M)
 	
-	buildMap(m, context)
+	buildMap(mp, m, context)
 }
 
-// func GetMap () (map[string]interface{}) {
-// 	return Map
-// }
+func (m *M) GetMap () {
+	fmt.Println("SHUAHA", *m)
+	//return reflect.ValueOf(m).Interface()
+}
 
-func buildMap (m map[string]string, c map[string]interface{}) {
-
-	buildedContext := make(map[string]interface{})
+func buildMap (mp M, m map[string]string, c map[string]interface{}) {
 
 	for i, _ := range c {
 
-		var key string
-
-		key = m[i]
-
-		if isDotted(m[i]) {
-			key = strings.Split(m[i], ".")[0]
-		}
-
-		buildedContext[key] = reflect.ValueOf(parse(buildedContext[i], i, m[i], c[i])).Interface().(map[string]interface{})
+		parse(mp[i], m[i], c[i])
 
 	}
 
-	fmt.Println("OPA", buildedContext)
+	fmt.Println(mp)
 
 }
 
-func parse (buildedContext interface{}, i string, m string, c interface{}) interface{} {
+func parse (context map[string]interface{}, key string, value interface{}) {
 
-	if buildedContext == nil {
+	context = make(map[string]interface{})
 
-		buildedContext := make(map[string]interface{})
+	if (isDotted(key)) {
 
-		externalKey := reflect.ValueOf(m).Interface().(string)
+		var mainKey string
 
-		if isDotted(externalKey) {
+		mainKey = strings.Split(key, ".")[0]
 
-			s := strings.Split(externalKey, ".")
+		newKeys := make(map[string]interface{})
 
-			//result := make(map[string]interface{})
+		for _, v := range strings.Split(key, ".") {
 
-			for x, z := range s {
-				//primeiro infice não pega
-				if (x > 0) {
+			switch t := reflect.ValueOf(value).Interface().(type) {
 
-					var currentIndexContextValue interface{}
-					var currentIndexMapValue interface{}
-
-					switch t := reflect.ValueOf(c).Interface().(type) {
-
-						case string, int64, float64:
-							currentIndexContextValue = t
-						default:
-							panic("Unknown value type")
-
-					}
-
-					currentIndexMapValue = reflect.ValueOf(m).Interface().(string)
-					
-					buildedContext = buildAttribute(buildedContext, z, currentIndexContextValue, currentIndexMapValue)
-
-					fmt.Println("123", buildedContext)
-				}
+				case string, int64, float64:
+					newKeys[v] = t
+				default:
+					panic("Unknown value type")
 
 			}
 
-		} else {
-			buildedContext = buildAttribute(buildedContext, i, c, m)
 		}
 
-		return buildedContext
+		context := make(map[string]interface{})
 
-	} 
+		
+		context[mainKey] = newKeys
+
+		fmt.Println(context)
+
+	} else {
+
+	}
+}
+
+// func parse (buildedContext interface{}, i string, m string, c interface{}) interface{} {
+
+// 	if buildedContext == nil {
+
+// 		buildedContext := make(map[string]interface{})
+
+// 		externalKey := reflect.ValueOf(m).Interface().(string)
+
+// 		if isDotted(externalKey) {
+
+// 			s := strings.Split(externalKey, ".")
+
+// 			//result := make(map[string]interface{})
+
+// 			for x, z := range s {
+// 				//primeiro infice não pega
+// 				if (x > 0) {
+
+// 					var currentIndexContextValue interface{}
+// 					var currentIndexMapValue interface{}
+
+// 					switch t := reflect.ValueOf(c).Interface().(type) {
+
+// 						case string, int64, float64:
+// 							currentIndexContextValue = t
+// 						default:
+// 							panic("Unknown value type")
+
+// 					}
+
+// 					currentIndexMapValue = reflect.ValueOf(m).Interface().(string)
+					
+// 					buildedContext = buildAttribute(buildedContext, z, currentIndexContextValue, currentIndexMapValue)
+
+// 					fmt.Println("123", buildedContext)
+// 				}
+
+// 			}
+
+// 		} else {
+// 			buildedContext = buildAttribute(buildedContext, i, c, m)
+// 		}
+
+// 		return buildedContext
+
+// 	} 
 
 
-	return buildedContext
+// 	return buildedContext
 	
 
-}
+// }
 
 func isDotted (value string) bool {
 	match, _ := regexp.MatchString("\\.", value)
 	return match
 }
 
-func buildAttribute (container map[string]interface{}, key string, context interface{}, m interface{}) map[string]interface{} {
+// func buildAttribute (container map[string]interface{}, key string, context interface{}, m interface{}) map[string]interface{} {
 
-	t := reflect.TypeOf(context)
+// 	t := reflect.TypeOf(context)
 
-	//k := reflect.ValueOf(m).Interface().(string)
+// 	//k := reflect.ValueOf(m).Interface().(string)
 
-	if t.String() == "map[string]interface {}" || t.String() == "map[string]string" {
+// 	if t.String() == "map[string]interface {}" || t.String() == "map[string]string" {
 
-		//convertendo para o tipo pertinente
-		test := reflect.ValueOf(context).Interface().(map[string]interface{})
+// 		//convertendo para o tipo pertinente
+// 		test := reflect.ValueOf(context).Interface().(map[string]interface{})
 
-		result := make(map[string]interface{})
+// 		result := make(map[string]interface{})
 
-		for i, v := range test {
+// 		for i, v := range test {
 			
-			result[i] = v
-		}
+// 			result[i] = v
+// 		}
 
-		fmt.Println("TESTE", result)
+// 		fmt.Println("TESTE", result)
 
-		container[key] = result
+// 		container[key] = result
 
 
-	} else {
+// 	} else {
 
-		fmt.Println(key)
+// 		fmt.Println(key)
 
-		container[key] = context
-	}
+// 		container[key] = context
+// 	}
 
-	return container
+// 	return container
 
-}
+// }
 
-func buildComplexKey (key string) {
+// func buildComplexKey (key string) {
 
-}
+// }

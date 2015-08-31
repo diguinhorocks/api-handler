@@ -13,6 +13,7 @@ import(
 type RestErp struct {
 	name 	 string
 	erp_type string
+	Response map[string]interface{}
 }
 
 func (this *RestErp) GetName() string {
@@ -37,6 +38,11 @@ func (this *RestErp) SetConfigs(config io.Reader) {
 	builder.SetMap(rc.Type, rc.Map, rc.Context)
 }
 
+func (this *RestErp) GetResponse() string {
+	//fmt.Println(builder.GetMap())
+	return "oi"
+}
+
 func (this *RestErp) UpdatePrice(price float64) string {
 	return "updating price to " + strconv.FormatFloat(price, 'f', 2, 64)
 }
@@ -46,10 +52,8 @@ func (this *RestErp) UpdateStock(quantity int64) string {
 }
 
 func (this *RestErp) Dispatch() string {
-	fmt.Println(this.UpdatePrice(5.54))
-	fmt.Println(this.UpdateStock(6))
-
-	return "dispatched to erp server.."
+	s := this.GetResponse()
+	return s
 }
 
 func (this *RestErp) Resolve() string {
