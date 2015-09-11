@@ -1,17 +1,17 @@
 package factory
 
-import(
-	"fmt"
-	"strconv"
+import (
 	"encoding/json"
+	"fmt"
 	"io"
-	
+	"strconv"
+
 	"fabric/factory/builder"
 	//"fabric/factory/builder/types"
 )
 
 type RestErp struct {
-	name 	 string
+	name     string
 	erp_type string
 	Response map[string]interface{}
 }
@@ -24,6 +24,8 @@ func (this *RestErp) GetType() string {
 	return this.erp_type
 }
 
+type Response map[string]interface{}
+
 func (this *RestErp) SetConfigs(config io.Reader) {
 
 	var rc builder.RequestContainer
@@ -35,12 +37,11 @@ func (this *RestErp) SetConfigs(config io.Reader) {
 		panic("Not Supported data")
 	}
 
-	builder.SetMap(rc.Type, rc.Map, rc.Context)
+	this.Response = builder.SetMap(rc.Type, rc.Map, rc.Context)
 }
 
-func (this *RestErp) GetResponse() string {
-	//fmt.Println(builder.GetMap())
-	return "oi"
+func (this *RestErp) GetResponse() map[string]interface{} {
+	return this.Response
 }
 
 func (this *RestErp) UpdatePrice(price float64) string {
@@ -51,9 +52,8 @@ func (this *RestErp) UpdateStock(quantity int64) string {
 	return "update stock to.." + strconv.FormatInt(quantity, 10)
 }
 
-func (this *RestErp) Dispatch() string {
-	s := this.GetResponse()
-	return s
+func (this *RestErp) Dispatch() map[string]interface{} {
+	return this.GetResponse()
 }
 
 func (this *RestErp) Resolve() string {
@@ -62,5 +62,3 @@ func (this *RestErp) Resolve() string {
 
 	return "resolved the erp content to database.."
 }
-
-

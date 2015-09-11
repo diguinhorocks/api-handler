@@ -1,20 +1,22 @@
 package factory
 
-import "io"
+import (
+	"io"
+)
 
 type AbstractIntegrableFactory interface {
-	GetName() 	string
-	GetType() 	string
+	GetName() string
+	GetType() string
 	SetConfigs(c io.Reader)
-	Dispatch() 	string
-	Resolve()	string
+	Dispatch() map[string]interface{}
+	Resolve() string
 }
 
 type Integrable struct {
 	ais AbstractIntegrableFactory
 }
 
-func Factory (ais AbstractIntegrableFactory) *Integrable {
+func Factory(ais AbstractIntegrableFactory) *Integrable {
 	obj := new(Integrable)
 	obj.ais = ais
 	return obj
@@ -24,7 +26,7 @@ func (this *Integrable) SetConfigs(c io.Reader) {
 	this.ais.SetConfigs(c)
 }
 
-func (this *Integrable) Dispatch() string {
+func (this *Integrable) Dispatch() map[string]interface{} {
 	return this.ais.Dispatch()
 }
 
