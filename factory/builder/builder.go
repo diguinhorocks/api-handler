@@ -91,51 +91,35 @@ func attachValue(value interface{}, list []string, context interface{}) {
 
 	if len(list) > 1 {
 
-		if _, ok := context.(map[string]interface{})[list[0]]; !ok {
-			context.(map[string]interface{})[list[0]] = make(map[string]interface{})
-		}
+		// item seguinte é um array
+		if list[1] == "$" {
 
-		attachValue(value, list[1:], context.(map[string]interface{})[list[0]])
+			if _, ok := context.(map[string]interface{})[list[0]]; !ok {
+				context.(map[string]interface{})[list[0]] = make(map[string]interface{})
+			}
 
-	} else {
+			context.(map[string]interface{})[list[0]] = value
 
-		if reflect.TypeOf(value).Kind().String() == "slice" || reflect.TypeOf(value).Kind().String() == "map" {
+			for i, _ := range value.([]interface{}) {
 
-			if reflect.TypeOf(value).Kind().String() == "slice" {
-
-				for _, v := range value.([]interface{}) {
-
-					if reflect.TypeOf(v).Kind().String() == "string" {
-
-						if _, ok := context.(map[string]interface{})[list[0]]; !ok {
-							context.(map[string]interface{})[list[0]] = make([]string, 0)
-						}
-
-						context.(map[string]interface{})[list[0]] = append(context.(map[string]interface{})[list[0]].([]string), v.(string))
-
-					} else {
-
-						for x, z := range v.(map[string]interface{}) {
-
-							if _, ok := context.(map[string]interface{})[list[0]]; !ok {
-								context.(map[string]interface{})[list[0]] = make([]float64, 0)
-							}
-
-							if x == list[0] {
-								context.(map[string]interface{})[list[0]] = append(context.(map[string]interface{})[list[0]].([]float64), z.(float64))
-							}
-						}
-					}
-
-				}
-
-			} else if reflect.TypeOf(value).Kind().String() == "map" {
+				fmt.Println(value.([]interface{})[i].(map[string]interface{})["sku"])
 
 			}
 
+			//attachValue(value, list[1:], context.(map[string]interface{})[list[0]])
+
 		} else {
-			context.(map[string]interface{})[list[0]] = value
+
+			if _, ok := context.(map[string]interface{})[list[0]]; !ok {
+				context.(map[string]interface{})[list[0]] = make(map[string]interface{})
+			}
+
+			attachValue(value, list[1:], context.(map[string]interface{})[list[0]])
 		}
+
+	} else {
+
+		context.(map[string]interface{})[list[0]] = value
 
 	}
 
