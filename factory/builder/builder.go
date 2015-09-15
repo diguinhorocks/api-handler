@@ -70,7 +70,11 @@ func buildMap(mp M, m map[string]string, c map[string]interface{}) map[string]in
 				rightAssignment[mainKey] = make(map[string]interface{})
 			}
 
-			attachValue(leftAssignment, list[1:], rightAssignment[mainKey])
+			if isComplex(i) {
+				attachValue(leftAssignment, list[1:], rightAssignment[mainKey], list[len(list)-1], m, strings.Split(i, ".")[0])
+			} else {
+				attachValue(leftAssignment, list[1:], rightAssignment[mainKey], list[len(list)-1], m, "")
+			}
 
 		} else {
 
@@ -78,7 +82,7 @@ func buildMap(mp M, m map[string]string, c map[string]interface{}) map[string]in
 				rightAssignment[v] = make(map[string]interface{})
 			}
 
-			attachValue(leftAssignment, []string{v}, rightAssignment)
+			attachValue(leftAssignment, []string{v}, rightAssignment, "", m, "")
 		}
 
 	}
@@ -87,7 +91,7 @@ func buildMap(mp M, m map[string]string, c map[string]interface{}) map[string]in
 
 }
 
-func attachValue(value interface{}, list []string, context interface{}) {
+func attachValue(value interface{}, list []string, context interface{}, key string, mp map[string]string, mk string) {
 
 	if len(list) > 1 {
 
@@ -98,15 +102,24 @@ func attachValue(value interface{}, list []string, context interface{}) {
 				context.(map[string]interface{})[list[0]] = make(map[string]interface{})
 			}
 
-			context.(map[string]interface{})[list[0]] = value
+			context.(map[string]interface{})[list[0]] = make([]interface{}, 0)
 
-			for i, _ := range value.([]interface{}) {
+			for i, v := range value.([]interface{}) {
 
-				fmt.Println(value.([]interface{})[i].(map[string]interface{})["sku"])
+				var m = make(map[string]interface{})
+
+				keys := getKeyCandidates(mp, mk)
+
+				for n, k := range keys {
+					m[n] = v.(map[string]interface{})[k]
+				}
+
+				if len(context.(map[string]interface{})[list[0]].([]interface{})) == i {
+
+					context.(map[string]interface{})[list[0]] = append(context.(map[string]interface{})[list[0]].([]interface{}), m)
+				}
 
 			}
-
-			//attachValue(value, list[1:], context.(map[string]interface{})[list[0]])
 
 		} else {
 
@@ -114,7 +127,7 @@ func attachValue(value interface{}, list []string, context interface{}) {
 				context.(map[string]interface{})[list[0]] = make(map[string]interface{})
 			}
 
-			attachValue(value, list[1:], context.(map[string]interface{})[list[0]])
+			attachValue(value, list[1:], context.(map[string]interface{})[list[0]], list[len(list)-1], mp, mk)
 		}
 
 	} else {
@@ -122,6 +135,34 @@ func attachValue(value interface{}, list []string, context interface{}) {
 		context.(map[string]interface{})[list[0]] = value
 
 	}
+
+}
+
+func getKeyCandidates(m map[string]string, mainKey string) map[string]string {
+
+	res := make(map[string]string)
+
+	for i, x := range m {
+
+		if isComplex(i) {
+
+			str := strings.Split(i, ".")
+
+			if str[0] == mainKey {
+
+				for _, v := range str[1:] {
+
+					if v != "$" {
+						outerKey := strings.Split(x, ".")
+						res[outerKey[len(outerKey)-1]] = v
+					}
+				}
+
+			}
+		}
+	}
+
+	return res
 
 }
 
@@ -136,8 +177,6 @@ func findValue(attachment []string, context interface{}) interface{} {
 	if len(attachment) > 1 {
 
 		if attachment[1] == "$" {
-
-			fmt.Println(attachment)
 
 			for _, v := range context.(map[string][]map[string]string)[k.(string)] {
 				if reflect.TypeOf(v).Kind().String() == "map" {
@@ -207,10 +246,10 @@ func findValue(attachment []string, context interface{}) interface{} {
 				return t[attachment[0]]
 			case map[string][]string:
 				return t[attachment[0]]
-			case string, float64, int64:
+			case string, float64, int64, []interface{}:
 				return t
 			default:
-				panic("Unknown values type")
+				panic(t)
 			}
 		}
 
