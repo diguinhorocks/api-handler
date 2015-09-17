@@ -95,39 +95,61 @@ func attachValue(value interface{}, list []string, context interface{}, key stri
 
 	if len(list) > 1 {
 
-		// item seguinte é um array
-		if list[1] == "$" {
+		if reflect.TypeOf(context).Kind().String() == "map" {
+			// item seguinte é um array
+			if list[1] == "$" {
 
-			if _, ok := context.(map[string]interface{})[list[0]]; !ok {
-				context.(map[string]interface{})[list[0]] = make(map[string]interface{})
-			}
-
-			context.(map[string]interface{})[list[0]] = make([]interface{}, 0)
-
-			for i, v := range value.([]interface{}) {
-
-				var m = make(map[string]interface{})
-
-				keys := getKeyCandidates(mp, mk)
-
-				for n, k := range keys {
-					m[n] = v.(map[string]interface{})[k]
+				if _, ok := context.(map[string]interface{})[list[0]]; !ok {
+					context.(map[string]interface{})[list[0]] = make(map[string]interface{})
 				}
 
-				if len(context.(map[string]interface{})[list[0]].([]interface{})) == i {
+				context.(map[string]interface{})[list[0]] = make([]interface{}, 0)
 
-					context.(map[string]interface{})[list[0]] = append(context.(map[string]interface{})[list[0]].([]interface{}), m)
+				if reflect.TypeOf(value).Kind().String() == "slice" {
+
+					for i, v := range value.([]interface{}) {
+
+						var m = make(map[string]interface{})
+
+						keys := getKeyCandidates(mp, mk)
+
+						for n, k := range keys {
+							m[n] = v.(map[string]interface{})[k]
+						}
+
+						if len(context.(map[string]interface{})[list[0]].([]interface{})) == i {
+							context.(map[string]interface{})[list[0]] = append(context.(map[string]interface{})[list[0]].([]interface{}), m)
+						}
+
+					}
+				} else {
+
+					for i, _ := range value.(map[string]interface{}) {
+
+						attachValue(value.(map[string]interface{})[i], list, context, key, mp, mk)
+
+					}
+
 				}
 
+			} else {
+
+				if _, ok := context.(map[string]interface{})[list[0]]; !ok {
+					context.(map[string]interface{})[list[0]] = make(map[string]interface{})
+				}
+
+				attachValue(value, list[1:], context.(map[string]interface{})[list[0]], list[len(list)-1], mp, mk)
 			}
 
 		} else {
 
-			if _, ok := context.(map[string]interface{})[list[0]]; !ok {
-				context.(map[string]interface{})[list[0]] = make(map[string]interface{})
+			if reflect.TypeOf(context).Kind().String() == "slice" {
+
+				for i, _ := range context.([]interface{}) {
+					attachValue(value, list[1:], context.([]interface{})[i], list[len(list)-1], mp, mk)
+				}
 			}
 
-			attachValue(value, list[1:], context.(map[string]interface{})[list[0]], list[len(list)-1], mp, mk)
 		}
 
 	} else {
@@ -149,9 +171,7 @@ func getKeyCandidates(m map[string]string, mainKey string) map[string]string {
 			str := strings.Split(i, ".")
 
 			if str[0] == mainKey {
-
 				for _, v := range str[1:] {
-
 					if v != "$" {
 						outerKey := strings.Split(x, ".")
 						res[outerKey[len(outerKey)-1]] = v
@@ -168,151 +188,58 @@ func getKeyCandidates(m map[string]string, mainKey string) map[string]string {
 
 func findValue(attachment []string, context interface{}) interface{} {
 
-	c := convert(context)
+	k := reflect.ValueOf(attachment[0]).Interface()
 
-	k := convert(attachment[0])
+	var v interface{}
 
-	fmt.Println(attachment)
+	switch t := reflect.ValueOf(context).Interface().(type) {
+	case string, float64, int64, []interface{}, map[string]interface{}:
 
-	if len(attachment) > 1 {
-
-		if attachment[1] == "$" {
-
-			for _, v := range context.(map[string][]map[string]string)[k.(string)] {
-				if reflect.TypeOf(v).Kind().String() == "map" {
-					for i, _ := range v {
-						if i == attachment[2] {
-							fmt.Println(v[i])
-							return v[i]
-						}
-					}
-				}
-			}
-
-			//attachment = append(attachment[:1], attachment[1-1])
-		}
-
-	} else {
-
-		var v interface{}
-
-		switch t := reflect.ValueOf(c).Interface().(type) {
-		case string:
-			v = t
-		case int64:
-			v = t
-		case float64:
-			v = t
-		case map[string]string:
-			v = t[k.(string)]
-		case map[string]interface{}:
-			v = t[k.(string)]
-		case map[string][]string:
-			v = t
-		case map[string][]map[string]string:
-			v = t[k.(string)]
-		case map[string][]map[string]float64:
-			v = t[k.(string)]
-		case map[string][]map[string]int64:
-			v = t[k.(string)]
-		case map[string]map[string]map[string]string:
-			v = t[k.(string)]
-		case map[string]int64:
-			v = t[k.(string)]
-		case map[string]map[string]int64:
-			v = t[k.(string)]
-		case map[string]map[string]map[string]int64:
-			v = t[k.(string)]
-		case map[string]float64:
-			v = t[k.(string)]
-		case map[string]map[string]float64:
-			v = t[k.(string)]
-		case map[string]map[string]map[string]float64:
-			v = t[k.(string)]
-		default:
-			panic(reflect.TypeOf(t))
-		}
-
-		if len(attachment) > 1 {
-			return findValue(attachment[1:], v)
-
+		if reflect.TypeOf(t).Kind().String() == "map" {
+			v = t.(map[string]interface{})[k.(string)]
 		} else {
-			switch t := reflect.ValueOf(v).Interface().(type) {
-			case map[string]float64:
-				return t[attachment[0]]
-			case map[string]int64:
-				return t[attachment[0]]
-			case map[string]string:
-				return t[attachment[0]]
-			case map[string][]string:
-				return t[attachment[0]]
-			case string, float64, int64, []interface{}:
-				return t
-			default:
-				panic(t)
+			v = t
+		}
+
+	default:
+		panic("Unknown type for key " + k.(string) + " on value " + reflect.TypeOf(t).String())
+	}
+
+	switch t := reflect.ValueOf(v).Interface().(type) {
+	case string, float64, int64, []interface{}, map[string]interface{}:
+		return t
+	default:
+		fmt.Println("unknown value", t)
+	}
+
+	return context
+
+}
+
+func getMapValue(m interface{}, key string) interface{} {
+
+	if reflect.TypeOf(m).Kind().String() == "slice" {
+
+		for i, _ := range m.([]interface{}) {
+
+			return getMapValue(m.([]interface{})[i], key)
+
+		}
+
+	} else if reflect.TypeOf(m).Kind().String() == "map" {
+
+		for i, v := range m.(map[string]interface{}) {
+
+			if i != key {
+
+				return getMapValue(v, key)
+
 			}
 		}
 
 	}
 
-	return c
-
-}
-
-func convert(value interface{}) interface{} {
-
-	switch t := reflect.ValueOf(value).Interface().(type) {
-	case string:
-		value = reflect.ValueOf(t).Interface().(string)
-	case int64:
-		value = reflect.ValueOf(t).Interface().(int64)
-	case float64:
-		value = reflect.ValueOf(t).Interface().(float64)
-	case map[string]interface{}:
-		value = reflect.ValueOf(t).Interface().(map[string]interface{})
-	case []string:
-		value = reflect.ValueOf(t).Interface().([]string)
-	case []interface{}:
-		value = reflect.ValueOf(t).Interface().([]interface{})
-	case map[string][]map[string]string:
-		value = reflect.ValueOf(t).Interface().(map[string][]map[string]string)
-	case map[string]string:
-		value = reflect.ValueOf(t).Interface().(map[string]string)
-	case map[string][]string:
-		value = reflect.ValueOf(t).Interface().(map[string][]string)
-	case map[string]map[string]string:
-		value = reflect.ValueOf(t).Interface().(map[string]map[string]string)
-	case map[string]map[string]map[string]string:
-		value = reflect.ValueOf(t).Interface().(map[string]map[string]map[string]string)
-	case map[string]int64:
-		value = reflect.ValueOf(t).Interface().(map[string]int64)
-	case map[string]map[string]int64:
-		value = reflect.ValueOf(t).Interface().(map[string]map[string]int64)
-	case map[string]map[string]map[string]int64:
-		value = reflect.ValueOf(t).Interface().(map[string]map[string]map[string]int64)
-	case map[string]float64:
-		value = reflect.ValueOf(t).Interface().(map[string]float64)
-	case map[string]map[string]float64:
-		value = reflect.ValueOf(t).Interface().(map[string]map[string]float64)
-	case map[string]map[string]map[string]float64:
-		value = reflect.ValueOf(t).Interface().(map[string]map[string]map[string]float64)
-	default:
-		panic(reflect.TypeOf(t))
-	}
-
-	return value
-
-}
-
-func parseDotted() {
-
-}
-
-func parseList() {
-
-}
-
-func parseComplex() {
+	return m
 
 }
 

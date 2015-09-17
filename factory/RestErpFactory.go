@@ -53,6 +53,7 @@ func (this *RestErp) UpdateStock(quantity int64) string {
 }
 
 func (this *RestErp) Dispatch() map[string]interface{} {
+	fmt.Println("dispatched to " + this.GetName() + "server")
 	return this.GetResponse()
 }
 
