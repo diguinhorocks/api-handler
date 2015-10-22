@@ -2,6 +2,8 @@ package types
 
 //mudar para o tipo correto posteriormente
 type ProductMap struct {
+	Name  string
+	Attrs map[string]interface{}
 }
 
 func (this *ProductMap) GetName() string {

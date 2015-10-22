@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-
-	//"github.com/fatih/structs"
 )
 
 type ConcreteMappable interface {
@@ -14,17 +12,11 @@ type ConcreteMappable interface {
 	GetContext() interface{}
 }
 
-type RequestContainer struct {
-	Context map[string]interface{}
-	Type    string
-	Subject string
-	Map     map[string]string
-}
-
 type M map[string]interface{}
 
 func SetMap(t string, m map[string]string, context map[string]interface{}) map[string]interface{} {
-	fmt.Println("configuring map " + t)
+
+	fmt.Println("configuring map to type " + t)
 
 	mp := make(M)
 

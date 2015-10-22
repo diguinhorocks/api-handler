@@ -7,8 +7,9 @@ import (
 type AbstractIntegrableFactory interface {
 	GetName() string
 	GetType() string
+	GetContentType() string
 	SetConfigs(c io.Reader)
-	Dispatch() map[string]interface{}
+	Dispatch() string
 	Resolve() string
 }
 
@@ -26,10 +27,14 @@ func (this *Integrable) SetConfigs(c io.Reader) {
 	this.ais.SetConfigs(c)
 }
 
-func (this *Integrable) Dispatch() map[string]interface{} {
+func (this *Integrable) Dispatch() string {
 	return this.ais.Dispatch()
 }
 
 func (this *Integrable) Resolve() string {
 	return this.ais.Resolve()
+}
+
+func (this *Integrable) GetContentType() string {
+	return this.ais.GetContentType()
 }
